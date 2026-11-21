@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>D · DA PhoneBox</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&amp;family=Roboto+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+:root{--bg:#06080b;--card:rgba(255,255,255,.045);--card-hi:rgba(255,255,255,.075);--line:rgba(255,255,255,.08);--text:#eef2f6;--muted:#8a94a3;--dim:#5b6472;--cpu:#2dd4bf;--ok:#22c55e;--net:#f59e0b;--err:#ef4444}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;text-align:left;cursor:pointer}
+button:focus-visible{outline:2px solid var(--cpu);outline-offset:2px}
+button:active{transform:scale(.98)}
+.mono{font-family:'Roboto Mono',monospace}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wt{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+</style>
+</helmet>
+<div style="width: 900px; height: 420px; position: relative; display: flex; gap: 10px; padding: 14px; box-sizing: border-box; color: var(--text); font-family: Roboto, system-ui, sans-serif; font-variant-numeric: tabular-nums; overflow: hidden; background: radial-gradient(60% 80% at 78% 30%, rgba(45, 212, 191, .16), transparent 70%), radial-gradient(50% 60% at 10% 100%, rgba(45, 212, 191, .06), transparent 70%), #06080b">
+  <section style="width: 320px; flex-shrink: 0; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 12px; display: flex; flex-direction: column; gap: 8px; overflow: hidden">
+    <div class="wt" style="display: flex; align-items: baseline; gap: 8px; color: var(--cpu); padding: 0 4px">Escouade<span style="margin-left: auto; font-size: 10.5px; letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--dim)">demo-api · 5 agents</span></div>
+    <button onClick="{{ pickOverview }}" style="{{ overviewStyle }}">
+      <span style="display: flex; flex-direction: column"><span style="font-size: 22px; font-weight: 700; color: var(--ok); line-height: 1.1">3</span><span class="wt" style="font-size: 9.5px; color: var(--muted)">actifs</span></span>
+      <span style="display: flex; flex-direction: column"><span style="font-size: 22px; font-weight: 700; color: var(--net); line-height: 1.1">1</span><span class="wt" style="font-size: 9.5px; color: var(--muted)">attend</span></span>
+      <span style="display: flex; flex-direction: column"><span style="font-size: 22px; font-weight: 700; line-height: 1.1">4,38 $</span><span class="wt" style="font-size: 9.5px; color: var(--muted)">aujourd'hui</span></span>
+      <span style="margin-left: auto; color: var(--dim); font-size: 18px" aria-hidden="true">›</span>
+    </button>
+    <div style="display: flex; flex-direction: column; gap: 2px; overflow-y: auto; min-height: 0">
+      <sc-for list="{{ agents }}" as="a" hint-placeholder-count="5">
+        <button onClick="{{ a.pick }}" style="{{ a.rowStyle }}">
+          <span style="display: flex; align-items: center; gap: 9px">
+            <i style="{{ a.dot }}" aria-hidden="true"></i>
+            <span class="ell" style="font-size: 14px; font-weight: 600; flex-grow: 1; min-width: 0">{{ a.name }}</span>
+            <sc-if value="{{ a.hasSubs }}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; color: var(--muted); padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,.07)">↳ {{ a.nSubs }}</span></sc-if>
+            <span style="{{ a.labelStyle }}">{{ a.label }}</span>
+          </span>
+          <span class="ell" style="font-size: 12px; color: var(--muted); padding-left: 17px">{{ a.doing }}</span>
+          <sc-for list="{{ a.subs }}" as="s" hint-placeholder-count="0">
+            <span style="display: flex; align-items: center; gap: 7px; padding-left: 17px; font-size: 12px; color: var(--text); opacity: .85">
+              <span style="color: var(--dim)">└</span><i style="{{ s.dot }}" aria-hidden="true"></i><span class="ell" style="min-width: 0">{{ s.desc }}</span>
+            </span>
+          </sc-for>
+        </button>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+    <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+        <sc-for list="{{ quotas }}" as="q" hint-placeholder-count="3">
+          <div style="background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+            <span class="wt" style="color: var(--cpu)">{{ q.engine }} <span style="color: var(--dim)">{{ q.win }}</span></span>
+            <span style="font-size: 38px; font-weight: 700; line-height: 1">{{ q.pct }}</span>
+            <span style="height: 5px; border-radius: 3px; background: rgba(255,255,255,.07)"><span style="{{ q.bar }}"></span></span>
+            <span style="font-size: 11px; color: var(--dim)">{{ q.reset }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="flex-grow: 1; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+        <span class="wt" style="color: var(--muted)">Coût du jour par agent</span>
+        <sc-for list="{{ costs }}" as="c" hint-placeholder-count="5">
+          <span style="display: flex; align-items: center; gap: 10px; font-size: 12px">
+            <span class="ell" style="width: 130px; color: var(--muted)">{{ c.name }}</span>
+            <span style="flex-grow: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,.05)"><span style="{{ c.bar }}"></span></span>
+            <span style="width: 52px; text-align: right; font-weight: 600">{{ c.cost }}</span>
+          </span>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isAgent }}" hint-placeholder-val="{{ false }}">
+      <div style="background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+        <span class="wt" style="{{ sel.titleStyle }}">{{ sel.label }}<span style="margin-left: 8px; font-size: 10.5px; letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--dim)">{{ sel.engine }} · {{ sel.model }} · {{ sel.ticket }}</span></span>
+        <span class="ell" style="font-size: 24px; font-weight: 600; letter-spacing: -.01em">{{ sel.name }}</span>
+        <span style="font-size: 13px; color: var(--muted); line-height: 1.45">{{ sel.last }}</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+        <sc-for list="{{ sel.metrics }}" as="m" hint-placeholder-count="4">
+          <div style="background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px">
+            <span class="wt" style="font-size: 10px; color: var(--muted)">{{ m.k }}</span>
+            <span style="{{ m.style }}">{{ m.v }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="flex-grow: 1; min-height: 0; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; overflow: hidden">
+        <span class="wt" style="color: var(--muted)">Sous-agents <span style="color: var(--ok); margin-left: 6px">{{ sel.nSubs }} en cours</span><span style="color: var(--dim); margin-left: 6px">{{ sel.done }} finis</span></span>
+        <sc-for list="{{ sel.subs }}" as="s" hint-placeholder-count="1">
+          <span style="display: flex; align-items: center; gap: 9px; font-size: 13px">
+            <i style="{{ s.dot }}" aria-hidden="true"></i><span class="ell" style="flex-grow: 1; min-width: 0">{{ s.desc }}</span>
+            <span class="mono ell" style="font-size: 11px; color: var(--muted); max-width: 45%">{{ s.doing }}</span>
+          </span>
+        </sc-for>
+        <sc-if value="{{ sel.noSubs }}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; color: var(--dim)">Aucun sous-agent ne tourne.</span></sc-if>
+      </div>
+    </sc-if>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":900,"height":420}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { sel: 'refacto-auth' }; }
+  renderVals() {
+    var C = { running: '#22c55e', waiting: '#f59e0b', idle: '#22c55e', done: '#5b6472' };
+    var L = { running: 'En cours', waiting: 'Question', idle: 'Attend', done: 'Fini' };
+    function dot(st, s) {
+      var full = st === 'running' || st === 'waiting';
+      return 'display:inline-block;flex-shrink:0;width:' + s + 'px;height:' + s + 'px;border-radius:50%;box-sizing:border-box;' +
+        (full ? 'background:' + C[st] + ';box-shadow:0 0 8px ' + C[st] + ';' : 'border:2px solid ' + C[st] + ';');
+    }
+    var data = [
+      { id: 'tests-e2e', name: 'tests-e2e', st: 'waiting', engine: 'Claude', model: 'Sonnet 5.5', ticket: 'DEM-7', dur: '8 min', cost: '0,22 $', c: 0.22, heat: '64 °C', tokens: '412 k', doing: 'Lancer toute la suite e2e (38 tests) ?', last: 'Les 12 tests de /orders passent. Je lance toute la suite e2e (38 tests, 6 min) ou seulement l’authentification ?', subs: [], done: 4 },
+      { id: 'refacto-auth', name: 'refacto-auth', st: 'running', engine: 'Claude', model: 'Opus 5.5', ticket: 'DEM-4', dur: '12 min', cost: '2,41 $', c: 2.41, heat: '51 °C', tokens: '2,91 M', doing: 'Edit src/auth/jwt.ts', last: 'Le jeton est signé en ES256. Il reste à brancher la rotation des clés et à relancer les tests.', done: 18,
+        subs: [{ desc: 'Third rebase of the stack', st: 'running', doing: 'git rebase --onto main' }] },
+      { id: 'pagination-users', name: 'pagination-users', st: 'running', engine: 'Claude', model: 'Sonnet 5.5', ticket: 'DEM-3', dur: '3 min', cost: '0,14 $', c: 0.14, heat: '72 °C', tokens: '124 k', doing: 'Bash npm test', last: 'Plan : une limite par défaut, un curseur opaque, des tests pour chaque cas.', done: 2,
+        subs: [{ desc: 'Écrire les tests de la pagination', st: 'running', doing: 'cas du dernier curseur' }, { desc: 'Lister les appelants de /users', st: 'running', doing: 'Grep fetchUsers(' }] },
+      { id: 'dem-5-export-csv', name: 'dem-5-export-csv', st: 'idle', engine: 'Codex', model: 'GPT-5.5', ticket: 'DEM-5', dur: '21 min', cost: '0,41 $', c: 0.41, heat: '38 °C', tokens: '380 k', doing: 'Réveil à 14:30', last: 'L’export tourne en fond. Je reviens quand il a fini.', subs: [], done: 0 },
+      { id: 'dem-6-limiter', name: 'dem-6-limiter', st: 'done', engine: 'Claude', model: 'Sonnet 5.5', ticket: 'DEM-6', dur: '44 min', cost: '1,20 $', c: 1.2, heat: '22 °C', tokens: '1,2 M', doing: 'PR #41 ouverte', last: 'La limite est en place et testée. La PR #41 attend ta relecture.', subs: [], done: 6 }
+    ];
+    var self = this, selId = this.state.sel, selA = null;
+    var agents = data.map(function (a) {
+      var sel = a.id === selId; if (sel) selA = a;
+      return Object.assign({}, a, {
+        label: L[a.st], dot: dot(a.st, 9), hasSubs: a.subs.length > 0, nSubs: a.subs.length,
+        subs: a.subs.map(function (s) { return Object.assign({}, s, { dot: dot(s.st, 6) }); }),
+        labelStyle: 'font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:' + C[a.st],
+        pick: function () { self.setState({ sel: a.id }); },
+        rowStyle: 'display:flex;flex-direction:column;gap:3px;width:100%;box-sizing:border-box;padding:9px 10px;border-radius:12px;border:1px solid ' +
+          (sel ? (a.st === 'waiting' ? 'rgba(245,158,11,.55)' : 'rgba(45,212,191,.45)') : 'transparent') + ';' +
+          (sel ? 'background:var(--card-hi);' : a.st === 'waiting' ? 'background:rgba(245,158,11,.08);' : '')
+      });
+    });
+    var ov = selId === 'overview';
+    var max = 2.41;
+    return {
+      agents: agents, isOverview: ov, isAgent: !!selA,
+      pickOverview: function () { self.setState({ sel: 'overview' }); },
+      overviewStyle: 'display:flex;align-items:center;gap:18px;width:100%;box-sizing:border-box;padding:10px 12px;border-radius:12px;background:rgba(45,212,191,.07);border:1px solid ' + (ov ? 'rgba(45,212,191,.45)' : 'transparent'),
+      sel: selA ? Object.assign({}, selA, {
+        label: L[selA.st], nSubs: selA.subs.length, noSubs: selA.subs.length === 0,
+        titleStyle: 'display:flex;align-items:baseline;color:' + C[selA.st],
+        subs: selA.subs.map(function (s) { return Object.assign({}, s, { dot: dot(s.st, 7) }); }),
+        metrics: [
+          { k: 'Coût', v: selA.cost, style: 'font-size:22px;font-weight:700' },
+          { k: 'Durée', v: selA.dur, style: 'font-size:22px;font-weight:700' },
+          { k: 'Tokens', v: selA.tokens, style: 'font-size:22px;font-weight:700' },
+          { k: 'Cache', v: selA.heat, style: 'font-size:22px;font-weight:700;color:' + (parseInt(selA.heat, 10) > 45 ? '#f59e0b' : '#60a5fa') }
+        ]
+      }) : {},
+      quotas: [
+        { engine: 'Claude', win: '5 h', pct: '22 %', reset: 'repart à 15:10', bar: 'display:block;height:100%;width:22%;border-radius:3px;background:#2dd4bf' },
+        { engine: 'Claude', win: '7 j', pct: '36 %', reset: 'repart jeudi', bar: 'display:block;height:100%;width:36%;border-radius:3px;background:#2dd4bf' },
+        { engine: 'Codex', win: '5 h', pct: '8 %', reset: 'repart à 16:40', bar: 'display:block;height:100%;width:8%;border-radius:3px;background:#2dd4bf' }
+      ],
+      costs: data.map(function (a) { return { name: a.name, cost: a.cost, bar: 'display:block;height:100%;border-radius:3px;background:#a78bfa;width:' + Math.round(a.c / max * 100) + '%' }; })
+    };
+  }
+}
+</script>
+</body>
+</html>

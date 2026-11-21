@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Approbation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+:root{--p:oklch(0.72 0.12 48);--frame:color-mix(in oklch,var(--p) 8%,#08090a);--panel:color-mix(in oklch,var(--p) 4.5%,#0e0f11);--raise:color-mix(in oklch,var(--p) 6%,#15161a);--well:color-mix(in oklch,var(--p) 2%,#0a0b0d);--line:rgba(255,255,255,.075);--line-2:rgba(255,255,255,.12);--text:#f7f8f8;--soft:#d0d3d8;--muted:#989da6;--run:oklch(0.79 0.15 155);--wait:oklch(0.84 0.14 82);--p-ink:color-mix(in oklch,var(--p) 70%,white)}
+button{font:inherit;color:inherit;border:0;cursor:pointer}
+button:focus-visible{outline:2px solid var(--p-ink);outline-offset:2px}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+</helmet>
+<div style="width: 900px; height: 420px; display: flex; gap: 8px; padding: 8px; box-sizing: border-box; background: var(--frame); color: var(--text); font-family: Inter, system-ui, sans-serif; font-size: 13px; overflow: hidden">
+  <nav aria-label="Agents" style="width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; padding: 2px">
+    <div style="display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 10px; background: oklch(0.84 0.14 82 / .08); box-shadow: inset 0 0 0 1.5px oklch(0.84 0.14 82 / .6)">
+      <i style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--wait); box-shadow: 0 0 0 3px oklch(0.84 0.14 82 / .25)" aria-hidden="true"></i>
+      <span class="ell" style="font-weight: 600; flex-grow: 1">refacto-auth</span><span style="font-size: 12px; font-weight: 600; color: var(--wait)">Permission</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; padding: 9px 10px; color: var(--soft)"><i style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--run)" aria-hidden="true"></i><span style="flex-grow: 1">pagination-users</span><span style="font-size: 12px; color: var(--muted)">↳ 2</span></div>
+    <div style="display: flex; align-items: center; gap: 8px; padding: 9px 10px; color: var(--soft)"><i style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--run); box-sizing: border-box" aria-hidden="true"></i><span>dem-5-export-csv</span></div>
+    <div style="display: flex; align-items: center; gap: 8px; padding: 9px 10px; color: var(--soft)"><i style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid #989da6; box-sizing: border-box" aria-hidden="true"></i><span>dem-6-limiter</span></div>
+  </nav>
+  <main style="flex-grow: 1; min-width: 0; background: var(--panel); border: 1px solid oklch(0.84 0.14 82 / .32); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--wait)">Permission</span>
+      <span style="color: var(--muted); font-size: 12px">refacto-auth · DEM-4 · il y a 40 s</span>
+      <span style="flex-grow: 1"></span>
+      <span style="color: var(--muted); font-size: 12px">1 sur 2</span>
+    </div>
+    <h1 style="margin: 0; font-size: 18px; font-weight: 600">Lancer une commande Bash</h1>
+    <pre class="mono" style="margin: 0; padding: 12px 14px; border-radius: 10px; background: var(--well); border: 1px solid var(--line); color: #d5d8dd; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-all">git push --force-with-lease origin ticket/DEM-4</pre>
+    <p style="margin: 0; color: var(--muted); font-size: 12px">Pousse la branche rebasée. Aucune règle ne l'autorise d'office.</p>
+    <span style="flex-grow: 1"></span>
+    <sc-if value="{{ pending }}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; gap: 10px">
+        <button onClick="{{ deny }}" style="flex: 1; height: 52px; border-radius: 10px; background: var(--raise); box-shadow: inset 0 0 0 1px var(--line-2); font-size: 15px; font-weight: 600">Refuser</button>
+        <button onClick="{{ allow }}" style="flex: 2; height: 52px; border-radius: 10px; background: #f2f3f4; color: #08090a; font-size: 15px; font-weight: 650">Autoriser</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ answered }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ doneStyle }}">{{ doneText }}</div>
+    </sc-if>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":900,"height":420}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { answer: null }; }
+  renderVals() {
+    var self = this, a = this.state.answer;
+    return {
+      pending: !a, answered: !!a,
+      allow: function () { self.setState({ answer: 'allow' }); },
+      deny: function () { self.setState({ answer: 'deny' }); },
+      doneText: a === 'allow' ? '✓ Autorisé depuis le téléphone — la carte suivante arrive' : '✕ Refusé depuis le téléphone',
+      doneStyle: 'height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;' + (a === 'allow' ? 'color:oklch(0.79 0.15 155);background:oklch(0.79 0.15 155 / .1)' : 'color:oklch(0.74 0.14 22);background:oklch(0.74 0.14 22 / .1)')
+    };
+  }
+}
+</script>
+</body>
+</html>

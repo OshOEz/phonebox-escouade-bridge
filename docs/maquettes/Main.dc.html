@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>A · Fidèle</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+:root{--p:oklch(0.72 0.12 48);--frame:color-mix(in oklch,var(--p) 8%,#08090a);--panel:color-mix(in oklch,var(--p) 4.5%,#0e0f11);--raise:color-mix(in oklch,var(--p) 6%,#15161a);--raise-2:color-mix(in oklch,var(--p) 6%,#1b1c20);--line:rgba(255,255,255,.075);--line-2:rgba(255,255,255,.12);--text:#f7f8f8;--soft:#d0d3d8;--muted:#989da6;--run:oklch(0.79 0.15 155);--wait:oklch(0.84 0.14 82);--heat:oklch(0.82 0.13 75);--p-ink:color-mix(in oklch,var(--p) 70%,white)}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;text-align:left;cursor:pointer}
+button:focus-visible{outline:2px solid var(--p-ink);outline-offset:2px}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+</helmet>
+<div style="width: 900px; height: 420px; display: flex; gap: 8px; padding: 8px; box-sizing: border-box; background: var(--frame); color: var(--text); font-family: Inter, system-ui, sans-serif; font-size: 13px; overflow: hidden">
+  <nav aria-label="Agents" style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; padding: 2px 2px 8px">
+    <button onClick="{{ pickOverview }}" style="{{ overviewStyle }}">
+      <span style="display: flex; align-items: center; gap: 8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="color: var(--p-ink)"><path d="M3 3v18h18"></path><path d="M7 15l4-4 3 3 5-6"></path></svg>
+        <span style="font-weight: 600; flex-grow: 1">Vue d'ensemble</span>
+        <span style="color: var(--muted); font-size: 12px">aujourd'hui <b style="color: var(--soft)">4,38 $</b></span>
+      </span>
+      <span style="display: flex; gap: 12px; font-size: 12px; color: var(--muted); padding-left: 24px">
+        <span><b style="color: var(--run)">●</b> 3 actifs</span>
+        <span><b style="color: var(--wait)">●</b> 1 en attente</span>
+        <span>✓ 1 fini</span>
+      </span>
+    </button>
+    <sc-for list="{{ agents }}" as="a" hint-placeholder-count="4">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <button onClick="{{ a.pick }}" style="{{ a.cardStyle }}">
+          <span style="display: flex; align-items: center; gap: 7px">
+            <i style="{{ a.dot }}" aria-hidden="true"></i>
+            <span class="ell" style="font-weight: 600; flex-grow: 1; min-width: 0">{{ a.name }}</span>
+            <sc-if value="{{ a.hasSubs }}" hint-placeholder-val="{{ true }}"><span style="color: var(--muted); font-size: 12px">↳ {{ a.subsRunning }}</span></sc-if>
+            <sc-if value="{{ a.hasBg }}" hint-placeholder-val="{{ false }}"><span style="color: var(--muted); font-size: 12px">◷ {{ a.bg }}</span></sc-if>
+            <span style="{{ a.labelStyle }}">{{ a.label }}</span>
+          </span>
+          <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); padding-left: 15px">
+            <span>{{ a.model }}</span><span>·</span><span>{{ a.dur }}</span>
+            <span style="flex-grow: 1"></span>
+            <span class="mono" style="{{ a.heatStyle }}">{{ a.heat }}</span>
+          </span>
+          <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; padding-left: 15px; min-width: 0">
+            <span class="ell" style="color: var(--soft); flex-grow: 1; min-width: 0">{{ a.doing }}</span>
+            <span style="color: var(--muted); flex-shrink: 0">{{ a.tokens }} · {{ a.cost }}</span>
+          </span>
+        </button>
+        <sc-if value="{{ a.hasSubs }}" hint-placeholder-val="{{ true }}">
+          <div style="padding: 2px 0 4px 14px; display: flex; flex-direction: column; gap: 1px">
+            <span style="display: flex; gap: 6px; font-size: 12px; color: var(--muted); padding: 2px 8px">
+              <span aria-hidden="true">⌄</span><span style="color: var(--soft); font-weight: 500">Sous-agents</span>
+              <span style="color: var(--run)">{{ a.subsRunning }} en cours</span><span>{{ a.subsDone }} finis</span>
+            </span>
+            <sc-for list="{{ a.subs }}" as="s" hint-placeholder-count="1">
+              <button onClick="{{ s.pick }}" style="{{ s.rowStyle }}">
+                <span style="display: flex; align-items: center; gap: 7px; min-width: 0">
+                  <i style="{{ s.dot }}" aria-hidden="true"></i>
+                  <span class="ell" style="flex-grow: 1; min-width: 0">{{ s.desc }}</span>
+                  <span style="color: var(--muted); font-size: 11px; flex-shrink: 0">{{ s.model }}</span>
+                </span>
+                <span class="ell mono" style="font-size: 11px; color: var(--muted); padding-left: 13px">{{ s.doing }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </sc-for>
+  </nav>
+
+  <main style="flex-grow: 1; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; overflow: hidden">
+    <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; align-items: baseline; gap: 10px">
+          <h1 style="margin: 0; font-size: 18px; font-weight: 600">Vue d'ensemble</h1>
+          <span style="color: var(--muted)">5 agents · 2 projets</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+          <div style="background: var(--raise); border-radius: 10px; padding: 12px"><div style="font-size: 26px; font-weight: 650; color: var(--run)">3</div><div style="color: var(--muted); font-size: 12px">actifs</div></div>
+          <div style="background: var(--raise); border-radius: 10px; padding: 12px; box-shadow: inset 0 0 0 1px oklch(0.84 0.14 82 / .32)"><div style="font-size: 26px; font-weight: 650; color: var(--wait)">1</div><div style="color: var(--muted); font-size: 12px">t'attend</div></div>
+          <div style="background: var(--raise); border-radius: 10px; padding: 12px"><div style="font-size: 26px; font-weight: 650">3</div><div style="color: var(--muted); font-size: 12px">sous-agents</div></div>
+          <div style="background: var(--raise); border-radius: 10px; padding: 12px"><div style="font-size: 26px; font-weight: 650">4,38 $</div><div style="color: var(--muted); font-size: 12px">aujourd'hui</div></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <sc-for list="{{ quotas }}" as="q" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; gap: 12px">
+              <span style="width: 110px; color: var(--soft)"><b style="font-weight: 600">{{ q.engine }}</b> <span style="color: var(--muted)">{{ q.win }}</span></span>
+              <span style="flex-grow: 1; height: 6px; border-radius: 3px; background: var(--raise-2); overflow: hidden"><span style="{{ q.bar }}"></span></span>
+              <span style="width: 42px; text-align: right; font-weight: 600">{{ q.pct }}</span>
+              <span style="width: 110px; color: var(--muted); font-size: 12px">{{ q.reset }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isAgent }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 14px; min-height: 0">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <h1 class="ell" style="margin: 0; font-size: 18px; font-weight: 600; min-width: 0">{{ sel.name }}</h1>
+          <span style="{{ sel.pill }}">{{ sel.label }}</span>
+          <span style="flex-grow: 1"></span>
+          <span style="color: var(--muted); font-size: 12px">{{ sel.engine }} · {{ sel.model }}</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+          <div><div style="color: var(--muted); font-size: 11px">Contexte</div><div style="font-weight: 600">{{ sel.ctx }}</div></div>
+          <div><div style="color: var(--muted); font-size: 11px">Tokens</div><div style="font-weight: 600">{{ sel.tokens }}</div></div>
+          <div><div style="color: var(--muted); font-size: 11px">Coût</div><div style="font-weight: 600">{{ sel.cost }}</div></div>
+          <div><div style="color: var(--muted); font-size: 11px">Durée</div><div style="font-weight: 600">{{ sel.dur }}</div></div>
+        </div>
+        <div style="background: var(--raise); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px">
+          <span style="color: var(--muted); font-size: 11px; letter-spacing: .04em; text-transform: uppercase">Son dernier message</span>
+          <p style="margin: 0; color: var(--soft); line-height: 1.5">{{ sel.last }}</p>
+        </div>
+        <div style="display: flex; gap: 14px; color: var(--muted); font-size: 12px">
+          <span>Ticket <b class="mono" style="color: var(--p-ink); font-weight: 500">{{ sel.ticket }}</b></span>
+          <span>Cache <b class="mono" style="font-weight: 500; color: var(--heat)">{{ sel.heat }}</b></span>
+          <span>↳ {{ sel.subsRunning }} sous-agent en cours · {{ sel.subsDone }} finis</span>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isSub }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <span style="color: var(--muted); font-size: 12px">Sous-agent de <b style="color: var(--soft)">{{ sub.parent }}</b></span>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <h1 style="margin: 0; font-size: 18px; font-weight: 600">{{ sub.desc }}</h1>
+          <span style="{{ sub.pill }}">{{ sub.label }}</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+          <div><div style="color: var(--muted); font-size: 11px">Type</div><div style="font-weight: 600">{{ sub.type }}</div></div>
+          <div><div style="color: var(--muted); font-size: 11px">Modèle</div><div style="font-weight: 600">{{ sub.model }}</div></div>
+          <div><div style="color: var(--muted); font-size: 11px">Outils</div><div style="font-weight: 600">{{ sub.tools }}</div></div>
+          <div><div style="color: var(--muted); font-size: 11px">Tokens</div><div style="font-weight: 600">{{ sub.tokens }}</div></div>
+        </div>
+        <div style="background: var(--raise); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px">
+          <span style="color: var(--muted); font-size: 11px; letter-spacing: .04em; text-transform: uppercase">En ce moment</span>
+          <span class="mono" style="color: var(--soft); font-size: 12px; word-break: break-all">{{ sub.doing }}</span>
+        </div>
+      </div>
+    </sc-if>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":900,"height":420}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { sel: 'refacto-auth' }; }
+  renderVals() {
+    var C = { running: 'oklch(0.79 0.15 155)', waiting: 'oklch(0.84 0.14 82)', done: '#989da6', idle: '#7a7f88', error: 'oklch(0.74 0.14 22)' };
+    var L = { running: 'En cours', waiting: 'Question', done: 'Tour fini', idle: 'Attend', error: 'Planté' };
+    function dot(st, size) {
+      var s = size || 8, c = C[st];
+      var full = st === 'running' || st === 'waiting' || st === 'error';
+      return 'display:inline-block;flex-shrink:0;width:' + s + 'px;height:' + s + 'px;border-radius:50%;box-sizing:border-box;' +
+        (full ? 'background:' + c + ';' : 'border:1.5px solid ' + (st === 'idle' ? C.running : c) + ';') +
+        (st === 'waiting' ? 'box-shadow:0 0 0 3px oklch(0.84 0.14 82 / .25);' : '');
+    }
+    function pill(st) {
+      return 'font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;color:' + (st === 'idle' ? C.running : C[st]) + ';background:color-mix(in oklch,' + (st === 'idle' ? C.running : C[st]) + ' 14%,transparent)';
+    }
+    var data = [
+      { id: 'tests-e2e', name: 'tests-e2e', st: 'waiting', engine: 'Claude', model: 'Sonnet 5.5', dur: '8 min', heat: '64 °C', tokens: '412 k', cost: '0,22 $', ctx: '41 k / 200 k', ticket: 'DEM-7', doing: 'Lancer toute la suite e2e (38 tests) ?', last: 'Les 12 tests de la route /orders passent. Je lance toute la suite e2e (38 tests, environ 6 minutes) ou seulement ceux de l’authentification ?', bg: 0, subs: [], done: 4 },
+      { id: 'refacto-auth', name: 'refacto-auth', st: 'running', engine: 'Claude', model: 'Opus 5.5', dur: '12 min', heat: '51 °C', tokens: '2,91 M', cost: '2,41 $', ctx: '76 k / 200 k', ticket: 'DEM-4', doing: 'Edit src/auth/jwt.ts', last: 'Le jeton est maintenant signé en ES256. Il reste à brancher la rotation des clés et à relancer les tests.', bg: 4, done: 18,
+        subs: [{ id: 'sa1', desc: 'Third rebase of the stack', model: 'Opus 5.5', type: 'general-purpose', st: 'running', tools: '23', tokens: '184 k', doing: 'Lance R=/Users/robin/dev/demo-api git rebase --onto main' }] },
+      { id: 'pagination-users', name: 'pagination-users', st: 'running', engine: 'Claude', model: 'Sonnet 5.5', dur: '3 min', heat: '72 °C', tokens: '124 k', cost: '0,14 $', ctx: '62 k / 200 k', ticket: 'DEM-3', doing: 'Bash npm test', last: 'Voici le plan : une limite par défaut, un curseur opaque, et des tests pour chaque cas.', bg: 0, done: 2,
+        subs: [{ id: 'sa2', desc: 'Écrire les tests de la pagination', model: 'Haiku 4.5', type: 'test-writer', st: 'running', tools: '9', tokens: '31 k', doing: 'cas du dernier curseur' },
+               { id: 'sa3', desc: 'Lister les appelants de /users', model: 'Haiku 4.5', type: 'Explore', st: 'running', tools: '14', tokens: '22 k', doing: 'Grep "fetchUsers(" src/' }] },
+      { id: 'dem-5-export-csv', name: 'dem-5-export-csv', st: 'idle', engine: 'Codex', model: 'GPT-5.5', dur: '21 min', heat: '38 °C', tokens: '380 k', cost: '0,41 $', ctx: '—', ticket: 'DEM-5', doing: 'Réveil à 14:30', last: 'L’export tourne en fond. Je reviens quand il a fini.', bg: 1, subs: [], done: 0 },
+      { id: 'dem-6-limiter', name: 'dem-6-limiter', st: 'done', engine: 'Claude', model: 'Sonnet 5.5', dur: '44 min', heat: '22 °C', tokens: '1,2 M', cost: '1,20 $', ctx: '—', ticket: 'DEM-6', doing: '✓ Tour fini · PR #41 ouverte', last: 'La limite est en place et testée. La PR #41 attend ta relecture.', bg: 0, subs: [], done: 6 }
+    ];
+    var self = this, selId = this.state.sel, selAgent = null, selSub = null;
+    var card = 'display:flex;flex-direction:column;gap:4px;width:100%;box-sizing:border-box;padding:9px 10px;border-radius:10px;';
+    var agents = data.map(function (a) {
+      var sel = a.id === selId;
+      if (sel) selAgent = a;
+      var subs = a.subs.map(function (s) {
+        var ss = s.id === selId;
+        if (ss) selSub = Object.assign({ parent: a.name }, s);
+        return Object.assign({}, s, {
+          dot: dot(s.st, 7),
+          pick: function () { self.setState({ sel: s.id }); },
+          rowStyle: 'display:flex;flex-direction:column;gap:2px;width:100%;box-sizing:border-box;padding:6px 8px;border-radius:8px;font-size:12px;min-width:0;' + (ss ? 'background:var(--raise-2);box-shadow:inset 0 0 0 1px var(--line-2);' : '')
+        });
+      });
+      return Object.assign({}, a, {
+        label: L[a.st], subs: subs, hasSubs: subs.length > 0, subsRunning: subs.length, subsDone: a.done, hasBg: a.bg > 0,
+        dot: dot(a.st), labelStyle: 'font-size:12px;font-weight:600;color:' + (a.st === 'idle' ? C.running : C[a.st]),
+        heatStyle: 'font-size:11px;color:' + (parseInt(a.heat, 10) > 45 ? 'oklch(0.82 0.13 75)' : 'oklch(0.78 0.11 235)'),
+        pick: function () { self.setState({ sel: a.id }); },
+        cardStyle: card + (a.st === 'waiting' ? 'background:oklch(0.84 0.14 82 / .07);box-shadow:inset 0 0 0 1px oklch(0.84 0.14 82 / .32);' : sel ? 'background:var(--raise);box-shadow:inset 0 0 0 1px var(--line-2);' : '') +
+          (sel && a.st === 'waiting' ? 'box-shadow:inset 0 0 0 1.5px oklch(0.84 0.14 82 / .7);' : '')
+      });
+    });
+    var isOverview = selId === 'overview';
+    return {
+      agents: agents,
+      isOverview: isOverview, isAgent: !!selAgent, isSub: !!selSub,
+      pickOverview: function () { self.setState({ sel: 'overview' }); },
+      overviewStyle: card + 'gap:6px;' + (isOverview ? 'background:var(--raise);box-shadow:inset 0 0 0 1px var(--line-2);' : 'background:color-mix(in oklch,var(--p) 5%,transparent);'),
+      sel: selAgent ? Object.assign({}, selAgent, { label: L[selAgent.st], pill: pill(selAgent.st), subsRunning: selAgent.subs.length, subsDone: selAgent.done }) : {},
+      sub: selSub ? Object.assign({}, selSub, { label: L[selSub.st], pill: pill(selSub.st) }) : {},
+      quotas: [
+        { engine: 'Claude', win: '5 h', pct: '22 %', reset: 'repart à 15:10', bar: 'display:block;height:100%;width:22%;background:oklch(0.79 0.15 155);border-radius:3px' },
+        { engine: 'Claude', win: '7 j', pct: '36 %', reset: 'repart jeudi', bar: 'display:block;height:100%;width:36%;background:oklch(0.79 0.15 155);border-radius:3px' },
+        { engine: 'Codex', win: '5 h', pct: '8 %', reset: 'repart à 16:40', bar: 'display:block;height:100%;width:8%;background:oklch(0.79 0.15 155);border-radius:3px' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
