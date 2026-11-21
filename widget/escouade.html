@@ -1,0 +1,160 @@
+<style>
+  :root { --card: rgba(255,255,255,.045); --hi: rgba(255,255,255,.075); --line: rgba(255,255,255,.08); --text: #eef2f6; --muted: #8a94a3; --dim: #5b6472; --acc: #2dd4bf; --ok: #22c55e; --amber: #f59e0b; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; color: var(--text); font-family: Roboto, "Segoe UI", system-ui, sans-serif; font-variant-numeric: tabular-nums; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  button { font: inherit; color: inherit; background: none; border: 0; text-align: left; cursor: pointer; }
+  button:active { transform: scale(.98); }
+  .ell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .wt { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
+  .mono { font-family: "Roboto Mono", monospace; }
+  #app { height: 100%; display: flex; gap: 10px; padding: 2px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; }
+  #left { width: 36%; min-width: 230px; max-width: 340px; padding: 12px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+  #list { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; min-height: 0; }
+  #list::-webkit-scrollbar { display: none; }
+  #ov { display: flex; align-items: center; gap: 16px; padding: 10px 12px; border-radius: 12px; background: rgba(45,212,191,.07); border: 1px solid transparent; }
+  #ov.sel { border-color: rgba(45,212,191,.45); }
+  .stat b { display: block; font-size: 22px; font-weight: 700; line-height: 1.1; }
+  .stat span { font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--muted); }
+  .row { display: flex; flex-direction: column; gap: 3px; padding: 9px 10px; border-radius: 12px; border: 1px solid transparent; }
+  .row.waiting { background: rgba(245,158,11,.08); }
+  .row.sel { background: var(--hi); border-color: rgba(45,212,191,.45); }
+  .row.sel.waiting { border-color: rgba(245,158,11,.55); }
+  .head { display: flex; align-items: center; gap: 9px; }
+  .dot { flex-shrink: 0; width: 9px; height: 9px; border-radius: 50%; }
+  .dot.full { box-shadow: 0 0 8px currentColor; background: currentColor; }
+  .dot.ring { border: 2px solid currentColor; }
+  .dot.small { width: 6px; height: 6px; }
+  .name { font-size: 14px; font-weight: 600; flex-grow: 1; }
+  .badge { font-size: 11px; color: var(--muted); padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,.07); }
+  .label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; flex-shrink: 0; }
+  .line { font-size: 12px; color: var(--muted); padding-left: 18px; }
+  .sub { display: flex; align-items: center; gap: 7px; padding-left: 18px; font-size: 12px; opacity: .85; }
+  .sub i { font-style: normal; color: var(--dim); }
+  #right { flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .pad { padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .big { font-size: 24px; font-weight: 600; letter-spacing: -.01em; }
+  .last { font-size: 13px; color: var(--muted); line-height: 1.45; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; white-space: pre-line; }
+  .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .tiles.q { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  .tile { padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .tile b { font-size: 20px; font-weight: 700; }
+  .tile .pct { font-size: 34px; line-height: 1; }
+  .bar { height: 5px; border-radius: 3px; background: rgba(255,255,255,.07); }
+  .bar span { display: block; height: 100%; border-radius: 3px; }
+  .grow { flex-grow: 1; min-height: 0; overflow: hidden; }
+  .cost { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+  .cost .n { width: 34%; color: var(--muted); }
+  .cost .bar { flex-grow: 1; height: 6px; }
+  .cost b { width: 72px; text-align: right; font-weight: 600; }
+  .empty { height: 100%; display: grid; place-items: center; color: var(--muted); font-size: 14px; text-align: center; }
+</style>
+<div id="app"><div class="empty">En attente du pont Escouade…</div></div>
+<script>
+  // Fed by the bridge (phonebox-escouade-bridge) through PhoneBox's push key "escouade". Every text from the data goes
+  // through textContent: an agent's message is never read as HTML.
+  const app = document.getElementById('app');
+  let snap = null;
+  let sel = 'overview';
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function add(parent, ...kids) { kids.forEach((k) => k && parent.appendChild(k)); return parent; }
+  function dot(status, color, small) {
+    const d = el('span', 'dot ' + (status === 'running' || status === 'waiting' ? 'full' : 'ring') + (small ? ' small' : ''));
+    d.style.color = color;
+    return d;
+  }
+  function stat(value, label, color) {
+    const s = el('span', 'stat');
+    const b = el('b', null, value);
+    if (color) b.style.color = color;
+    return add(s, b, el('span', null, label));
+  }
+  function bar(share, color) {
+    const b = el('span', 'bar');
+    const f = el('span');
+    f.style.width = Math.round(share * 100) + '%';
+    f.style.background = color;
+    return add(b, f);
+  }
+  function tile(label, value, extra) {
+    const t = add(el('div', 'card tile'), el('span', 'wt', label));
+    const v = el('b', extra, value);
+    return add(t, v);
+  }
+
+  function render() {
+    app.replaceChildren();
+    if (!snap) { app.appendChild(el('div', 'empty', 'En attente du pont Escouade…')); return; }
+    if (snap.offline) { app.appendChild(el('div', 'empty', snap.message)); return; }
+    if (sel !== 'overview' && !snap.agents.some((a) => a.id === sel)) sel = 'overview';
+
+    const left = el('section', 'card', null); left.id = 'left';
+    const title = el('div', 'wt', 'Escouade'); title.style.color = 'var(--acc)';
+    const ov = el('button', sel === 'overview' ? 'sel' : ''); ov.id = 'ov';
+    add(ov, stat(String(snap.totals.active), 'actifs', 'var(--ok)'), stat(String(snap.totals.waiting), 'attendent', 'var(--amber)'), stat(String(snap.totals.done), 'finis'));
+    ov.onclick = () => { sel = 'overview'; render(); };
+    const list = el('div'); list.id = 'list';
+    for (const a of snap.agents) {
+      const r = el('button', 'row' + (a.status === 'waiting' ? ' waiting' : '') + (sel === a.id ? ' sel' : ''));
+      const head = add(el('span', 'head'), dot(a.status, a.color), el('span', 'name ell', a.name));
+      if (a.subsRunning > 0) head.appendChild(el('span', 'badge', '↳ ' + a.subsRunning));
+      const lab = el('span', 'label', a.label); lab.style.color = a.color;
+      head.appendChild(lab);
+      add(r, head, a.line ? el('span', 'line ell', a.line) : null);
+      for (const s of a.subs) add(r, add(el('span', 'sub'), el('i', null, '└'), dot('running', 'var(--ok)', true), el('span', 'ell', s.desc)));
+      r.onclick = () => { sel = a.id; render(); };
+      list.appendChild(r);
+    }
+    add(left, title, ov, list);
+
+    const right = el('section'); right.id = 'right';
+    if (sel === 'overview') {
+      const q = el('div', 'tiles q');
+      for (const m of snap.quotas) {
+        const t = add(el('div', 'card tile'), el('span', 'wt', m.engine + ' · ' + m.win));
+        t.firstChild.style.color = 'var(--acc)';
+        add(t, el('b', 'pct', m.pct + ' %'), bar(m.pct / 100, 'var(--acc)'), el('span', 'line', m.reset));
+        t.lastChild.style.paddingLeft = '0';
+        q.appendChild(t);
+      }
+      const costs = add(el('div', 'card pad grow'), el('span', 'wt', 'Coût des agents · ' + snap.totals.cost));
+      costs.firstChild.style.color = 'var(--muted)';
+      for (const c of snap.costs.slice(0, 8)) add(costs, add(el('span', 'cost'), el('span', 'n ell', c.name), bar(c.share, '#a78bfa'), el('b', null, c.cost)));
+      add(right, q, costs);
+    } else {
+      const a = snap.agents.find((x) => x.id === sel);
+      const head = el('div', 'card pad');
+      const lab = el('span', 'wt', a.label); lab.style.color = a.color;
+      add(head, lab, el('span', 'big ell', a.name), el('span', 'line', [a.project, a.engine, a.model].join(' · ')), el('span', 'last', a.last || 'Pas encore de message.'));
+      head.children[2].style.paddingLeft = '0';
+      const tiles = add(el('div', 'tiles'), tile('Coût', a.cost), tile('Modèle', a.model, 'ell'), tile('Ticket', a.ticket || '—', 'mono'), tile('En fond', String(a.bg)));
+      const subs = el('div', 'card pad grow');
+      const st = el('span', 'wt', 'Sous-agents · ' + a.subsRunning + ' en cours · ' + a.subsDone + ' finis');
+      st.style.color = 'var(--muted)';
+      subs.appendChild(st);
+      if (!a.subs.length) subs.appendChild(el('span', 'line', 'Aucun sous-agent ne tourne.'));
+      for (const s of a.subs) {
+        const r = add(el('span', 'head'), dot('running', 'var(--ok)'), el('span', 'name ell', s.desc));
+        r.children[1].style.fontSize = '13px';
+        r.children[1].style.fontWeight = '400';
+        const d = el('span', 'mono ell', s.doing); d.style.cssText = 'font-size:11px;color:var(--muted);max-width:45%';
+        subs.appendChild(add(r, d));
+      }
+      add(right, head, tiles, subs);
+    }
+    add(app, left, right);
+  }
+
+  phonebox.on('push', (items) => {
+    const it = items && items.escouade;
+    // PhoneBox keeps each pushed value with its time; the casing of the field is checked on the first real run.
+    snap = it ? (it.data ?? it.Data ?? it) : null;
+    render();
+  });
+</script>

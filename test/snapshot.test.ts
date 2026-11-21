@@ -62,6 +62,18 @@ test('quota windows of the current account', () => {
   assert.match(q[1].reset, /^repart [a-zé]+$/);
 });
 
+test('quota as Escouade really sends it: epoch ms and a per-model meter', () => {
+  const real = { accounts: [{ name: 'MAX', engine: 'claude', current: true, meters: [
+    { minutes: 300, pct: 5, resetsAt: new Date(2026, 10, 22, 15, 10).getTime() },
+    { minutes: 10080, pct: 29, resetsAt: new Date(2026, 10, 26, 9, 0).getTime(), model: 'Fable' },
+  ] }] };
+  const s = buildSnapshot({ agents, work, summaries, usage: real, now });
+  assert.equal(s.offline, false);
+  if (s.offline) return;
+  assert.equal(s.quotas[0].reset, 'repart à 15:10');
+  assert.equal(s.quotas[1].engine, 'Claude · Fable');
+});
+
 test('euros', () => {
   assert.equal(euros(2.41), '2,41 $');
   assert.equal(euros(0), '0,00 $');

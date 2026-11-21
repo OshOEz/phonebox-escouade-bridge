@@ -9,7 +9,8 @@ export type Agent = {
 export type BackgroundWork = { subagents: { id: string; description: string; status: string; doing?: string | null }[] };
 export type AgentSummary = { lastMessage: string | null };
 export type Usage = {
-  accounts: { name: string; engine: string; current: boolean; meters: { minutes: number | null; pct: number; resetsAt: string | null }[] }[];
+  // resetsAt: epoch ms as Escouade sends it (its doc says ISO: both read). model: a meter scoped to one model.
+  accounts: { name: string; engine: string; current: boolean; meters: { minutes: number | null; pct: number; resetsAt: string | number | null; model?: string }[] }[];
 };
 
 export type Status = 'waiting' | 'running' | 'idle' | 'error' | 'done';
@@ -74,7 +75,7 @@ export function buildSnapshot(input: {
     v: 1, at: now, offline: false,
     totals: { active: count('running', 'idle'), waiting: count('waiting'), done: count('done'), cost: euros(total) },
     quotas: usage.accounts.filter((acc) => acc.current).flatMap((acc) =>
-      acc.meters.map((m) => ({ engine: engineName(acc.engine), win: windowOf(m.minutes), pct: Math.round(m.pct), reset: resetOf(m.resetsAt, now) }))),
+      acc.meters.map((m) => ({ engine: engineName(acc.engine) + (m.model ? ` · ${m.model}` : ''), win: windowOf(m.minutes), pct: Math.round(m.pct), reset: resetOf(m.resetsAt, now) }))),
     costs: [...agents]
       .sort((x, y) => y.cost - x.cost)
       .slice(0, MAX_AGENTS)
@@ -94,9 +95,9 @@ function windowOf(minutes: number | null) {
   return `${minutes} min`;
 }
 
-function resetOf(iso: string | null, now: number) {
-  if (!iso) return '';
-  const d = new Date(iso);
+function resetOf(at: string | number | null, now: number) {
+  if (at === null || at === '') return '';
+  const d = new Date(at);
   if (d.toDateString() === new Date(now).toDateString()) {
     return `repart à ${new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(d)}`;
   }
