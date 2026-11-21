@@ -3,10 +3,14 @@ import { toHookBody, type PermissionRequest } from './phonebox.ts';
 
 export type Deps = {
   ask: (body: object, signal: AbortSignal) => Promise<'allow' | 'deny' | null>;
-  answer: (request: string, decision: 'allow' | 'deny') => Promise<void>;
+  answer: (r: PermissionRequest, decision: 'allow' | 'deny') => Promise<void>;
   cwdOf: (projectId: string) => string;
   log: (line: string) => void;
 };
+
+// The arguments of Escouade's answer_permission: the agent is required, the project tells two same-named agents apart.
+export const answerArgs = (r: PermissionRequest, decision: 'allow' | 'deny') =>
+  ({ agent: r.agent.id, project: r.agent.projectId, request: r.request, decision });
 
 export class ApprovalRelay {
   #deps: Deps;
@@ -44,7 +48,7 @@ export class ApprovalRelay {
     try {
       const decision = await this.#deps.ask(toHookBody(r, this.#deps.cwdOf(r.agent.projectId)), ctl.signal);
       if (ctl.signal.aborted || !decision) return;
-      await this.#deps.answer(r.request, decision);
+      await this.#deps.answer(r, decision);
     } catch (err) {
       if (!ctl.signal.aborted) this.#deps.log(`${r.agent.name} : ${(err as Error).message}`);
     } finally {

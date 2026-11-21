@@ -90,6 +90,28 @@ test('staysUnderPushLimit', () => {
   assert.ok(JSON.stringify(s).length < 60000, `${JSON.stringify(s).length}`);
 });
 
+for (const [kind, ch] of [['accents', 'é'], ['quotes', '"'], ['CJK', '漢']] as const) {
+  test(`staysUnderPushLimit in bytes with ${kind}`, () => {
+    const many: Agent[] = Array.from({ length: 40 }, (_, i) => ({ ...agents[1], id: `a${i}`, name: ch.repeat(80) }));
+    const longWork = Object.fromEntries(many.map((a) => [a.id, { subagents: Array.from({ length: 20 }, (_, j) => ({ id: `${a.id}-${j}`, description: ch.repeat(500), status: 'running', doing: ch.repeat(500) })) }]));
+    const longSum = Object.fromEntries(many.map((a) => [a.id, { lastMessage: ch.repeat(5000) }]));
+    const s = buildSnapshot({ agents: many, work: longWork, summaries: longSum, usage, now });
+    assert.equal(s.offline, false);
+    if (s.offline) return;
+    assert.equal(s.agents.length, 30);
+    assert.ok(Buffer.byteLength(JSON.stringify(s)) < 60000, `${Buffer.byteLength(JSON.stringify(s))}`);
+    assert.ok(s.agents[0].last.length > 0, 'trims the message, does not drop it first');
+  });
+}
+
+test('costs keep the 8 the widget shows', () => {
+  const many: Agent[] = Array.from({ length: 12 }, (_, i) => ({ ...agents[1], id: `a${i}`, name: `a${i}`, cost: i }));
+  const s = buildSnapshot({ agents: many, work: {}, summaries: {}, usage, now });
+  if (s.offline) return assert.fail();
+  assert.equal(s.costs.length, 8);
+  assert.equal(s.costs[0].name, 'a11');
+});
+
 test('offlineSnapshot', () => {
   assert.deepEqual(offlineSnapshot(now), { v: 1, at: now, offline: true, message: 'Escouade ne répond pas' });
 });

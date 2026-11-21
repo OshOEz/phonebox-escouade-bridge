@@ -18,8 +18,9 @@ const headers = (cfg: PhoneBoxConfig) => ({
   ...(cfg.token ? { authorization: `Bearer ${cfg.token}` } : {}),
 });
 
-export async function push(cfg: PhoneBoxConfig, key: string, value: unknown): Promise<void> {
-  const res = await fetch(`${cfg.url}/api/push/${key}`, { method: 'POST', headers: headers(cfg), body: JSON.stringify(value) });
+// ttl (s): PhoneBox drops the value after it, so a stopped bridge does not leave old agents on the phone.
+export async function push(cfg: PhoneBoxConfig, key: string, value: unknown, ttl?: number): Promise<void> {
+  const res = await fetch(`${cfg.url}/api/push/${key}${ttl ? `?ttl=${ttl}` : ''}`, { method: 'POST', headers: headers(cfg), body: JSON.stringify(value) });
   await res.body?.cancel();
   if (!res.ok) throw new Error(`PhoneBox a répondu ${res.status}`);
 }
@@ -36,6 +37,7 @@ export function toHookBody(r: PermissionRequest, cwd: string): object {
 export async function askPermission(cfg: PhoneBoxConfig, body: object, signal: AbortSignal): Promise<'allow' | 'deny' | null> {
   const res = await fetch(`${cfg.url}/api/hooks/claude/permission`, { method: 'POST', headers: headers(cfg), body: JSON.stringify(body), signal });
   const text = await res.text();
+  if (!res.ok) throw new Error(`PhoneBox a répondu ${res.status}`); // Wrong token or no such route: say it.
   try {
     const behavior = JSON.parse(text)?.hookSpecificOutput?.decision?.behavior;
     return behavior === 'allow' || behavior === 'deny' ? behavior : null;

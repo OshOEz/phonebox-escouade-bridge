@@ -50,6 +50,20 @@ test('askPermission empty body → null', async (t) => {
   assert.equal(await askPermission({ url: s.url }, {}, new AbortController().signal), null);
 });
 
+test('askPermission throws on HTTP error', async (t) => {
+  const s = await stub((_r, _b, res) => { res.statusCode = 401; res.end(); });
+  t.after(s.close);
+  await assert.rejects(askPermission({ url: s.url }, {}, new AbortController().signal), { message: 'PhoneBox a répondu 401' });
+});
+
+test('push passes the ttl', async (t) => {
+  let path: string | undefined;
+  const s = await stub((r, _b, res) => { path = r.url; res.end(); });
+  t.after(s.close);
+  await push({ url: s.url }, 'escouade', 1, 60);
+  assert.equal(path, '/api/push/escouade?ttl=60');
+});
+
 test('toHookBody Bash', () => {
   const b = toHookBody(req(), '/dev/demo-api') as any;
   assert.equal(b.hook_event_name, 'PermissionRequest');

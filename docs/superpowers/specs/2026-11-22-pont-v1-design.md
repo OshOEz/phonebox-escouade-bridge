@@ -72,5 +72,8 @@ que le widget n'affiche qu'une demande à la fois et que le pont refuse une déc
 - Le hook `PermissionRequest` que PhoneBox installe dans `~/.claude/settings.json` capte-t-il déjà les agents
   d'Escouade (lancés avec `--permission-prompt-tool`) ? Si oui, le pont doit pouvoir couper son envoi
   (`BRIDGE_APPROVALS=0`) pour ne pas doubler les cartes.
-- La casse des champs de `GET /api/push` reçus par le widget (`data` supposé).
-- Que l'abandon de l'appel HTTP ferme bien la carte sur le téléphone.
+- Rendu réel du widget sur le téléphone, et la carte native de bout en bout (`answer_permission` réel).
+
+Réglé en lisant le code (relecture du 2026-11-22) : le widget reçoit `items.escouade.data` (PhoneBox sérialise en
+camelCase, `Program.cs`) ; l'abandon de l'appel annule bien la carte (`RequestAborted` → `AskAsync` annulé). Vu sur
+le vrai Escouade : les listes arrivent nues, `resetsAt` est en millisecondes, et un compteur peut porter un `model`.

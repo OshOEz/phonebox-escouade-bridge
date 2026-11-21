@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { loadConfig, callTool } from './escouade.ts';
 import { push, askPermission, type PhoneBoxConfig, type PermissionRequest } from './phonebox.ts';
 import { buildSnapshot, offlineSnapshot, type Agent, type BackgroundWork, type AgentSummary, type Usage, type Snapshot } from './snapshot.ts';
-import { ApprovalRelay } from './approvals.ts';
+import { ApprovalRelay, answerArgs } from './approvals.ts';
 
 const REQUESTS_MS = 2000;
 const SNAPSHOT_EVERY = 3; // ticks: the agents every 6 s.
@@ -14,27 +14,41 @@ const phonebox: PhoneBoxConfig = { url: process.env.PHONEBOX_URL ?? 'http://127.
 const relayOn = process.env.BRIDGE_APPROVALS !== '0';
 const log = (line: string) => console.log(`${new Date().toLocaleTimeString('fr-FR')} ${line}`);
 
-const call = <T>(name: string, args: object = {}) => callTool<T>(escouade, name, args);
+// 10 s at most: a hung Escouade shows as offline instead of stalling the loop.
+const call = <T>(name: string, args: object = {}) => callTool<T>(escouade, name, args, AbortSignal.timeout(10_000));
+const TTL = 60; // PhoneBox drops the agents a minute after the bridge stops pushing.
+const REFRESH_MS = 30_000; // So a running bridge pushes at least this often.
 // Escouade sends lists bare (seen 2026-11-22); an object holding one is read too, should that change.
 const list = <T>(x: unknown): T[] => (Array.isArray(x) ? x : (Object.values(x ?? {}).find(Array.isArray) as T[]) ?? []);
 
 let paths: Record<string, string> = {};
 const relay = new ApprovalRelay({
   ask: (body, signal) => askPermission(phonebox, body, signal),
-  answer: async (request, decision) => { await call('answer_permission', { request, decision }); },
+  answer: async (r, decision) => { await call('answer_permission', answerArgs(r, decision)); },
   cwdOf: (projectId) => paths[projectId] ?? '',
   log,
 });
 
 let lastSent = '';
+let lastSentAt = 0;
 let offline = false;
+let pushFailing = false;
 
+// A PhoneBox failure is logged as such and never turns into the « Escouade ne répond pas » screen.
 async function sendIfChanged(s: Snapshot) {
   const { at: _at, ...rest } = s;
   const key = JSON.stringify(rest);
-  if (key === lastSent) return;
-  await push(phonebox, 'escouade', s);
-  lastSent = key;
+  if (key === lastSent && Date.now() - lastSentAt < REFRESH_MS) return;
+  try {
+    await push(phonebox, 'escouade', s, TTL);
+    lastSent = key;
+    lastSentAt = Date.now();
+    if (pushFailing) log('PhoneBox reçoit de nouveau');
+    pushFailing = false;
+  } catch (err) {
+    if (!pushFailing) log(`PhoneBox refuse l'envoi : ${(err as Error).message}`);
+    pushFailing = true;
+  }
 }
 
 async function snapshot() {
@@ -48,8 +62,12 @@ async function snapshot() {
   const summaries: Record<string, AgentSummary> = {};
   await Promise.all(agents.map(async (a) => {
     const ref = { agent: a.id, project: a.projectId };
-    summaries[a.id] = await call<AgentSummary>('get_agent_summary', ref);
-    if (a.subagentsRunning > 0) work[a.id] = await call<BackgroundWork>('list_background_work', ref);
+    // An agent archived between the two calls only loses its details, not the whole screen.
+    summaries[a.id] = await call<AgentSummary>('get_agent_summary', ref).catch(() => ({ lastMessage: null }));
+    if (a.subagentsRunning > 0) {
+      const w = await call<BackgroundWork>('list_background_work', ref).catch(() => undefined);
+      if (w) work[a.id] = w;
+    }
   }));
   await sendIfChanged(buildSnapshot({ agents, work, summaries, usage, now: Date.now() }));
 }
@@ -63,10 +81,10 @@ async function tick() {
     offline = false;
   } catch (err) {
     if (!offline) {
-      log(`Escouade ou PhoneBox ne répond pas : ${(err as Error).message}`);
-      await sendIfChanged(offlineSnapshot(Date.now())).catch(() => {});
+      log(`Escouade ne répond pas : ${(err as Error).message}`);
     }
     offline = true;
+    await sendIfChanged(offlineSnapshot(Date.now()));
   }
 }
 

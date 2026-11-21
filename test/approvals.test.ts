@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ApprovalRelay, type Deps } from '../src/approvals.ts';
+import { ApprovalRelay, answerArgs, type Deps } from '../src/approvals.ts';
 import type { PermissionRequest } from '../src/phonebox.ts';
 
 const req = (request: string, type: PermissionRequest['type'] = 'permission'): PermissionRequest => ({
@@ -16,7 +16,7 @@ function fake() {
   let answerFails = false;
   const deps: Deps = {
     ask: (body, signal) => new Promise((resolve) => asks.push({ body, signal, resolve })),
-    answer: async (r, d) => { if (answerFails) throw new Error('déjà répondue'); answers.push([r, d]); },
+    answer: async (r, d) => { if (answerFails) throw new Error('déjà répondue'); answers.push([r.request, d]); },
     cwdOf: (id) => `/projects/${id}`,
     log: (l) => logs.push(l),
   };
@@ -48,6 +48,10 @@ test('answers allow', async () => {
   await tick();
   assert.deepEqual(f.answers, [['r1', 'allow']]);
   assert.deepEqual(relay.inFlight(), []);
+});
+
+test('answerArgs names the agent, as answer_permission requires', () => {
+  assert.deepEqual(answerArgs(req('r1'), 'deny'), { agent: 'ag1', project: 'p1', request: 'r1', decision: 'deny' });
 });
 
 test('emptyBodyLeavesItAndNeverResends', async () => {

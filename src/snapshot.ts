@@ -33,8 +33,10 @@ export type Snapshot =
 const ORDER: Status[] = ['waiting', 'running', 'idle', 'error', 'done'];
 const LABEL: Record<Status, string> = { waiting: 'Attend ta réponse', running: 'En cours', idle: 'Attend', error: 'Planté', done: 'Fini' };
 const COLOR: Record<Status, string> = { waiting: '#f59e0b', running: '#22c55e', idle: '#22c55e', error: '#ef4444', done: '#5b6472' };
-// Bounds that keep 30 agents under PhoneBox's 64 KB push (test staysUnderPushLimit).
-const MAX_AGENTS = 30, MAX_SUBS = 5, NAME = 60, LINE = 90, LAST = 280, SUB = 60;
+// PhoneBox refuses a push over 65,536 bytes: 30 agents, then the message and the sub-agents shrink, tier by tier,
+// until the payload fits (tests staysUnderPushLimit).
+const MAX_AGENTS = 30, MAX_COSTS = 8, NAME = 60, LINE = 90, SUB = 60, MAX_BYTES = 60000;
+const TIERS = [{ last: 280, subs: 5 }, { last: 140, subs: 3 }, { last: 100, subs: 2 }, { last: 40, subs: 1 }];
 
 export const euros = (n: number) => `${n.toFixed(2).replace('.', ',')} $`;
 
@@ -42,9 +44,18 @@ const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` 
 
 const statusOf = (a: Agent): Status => (a.waiting ? 'waiting' : a.status);
 
-export function buildSnapshot(input: {
-  agents: Agent[]; work: Record<string, BackgroundWork>; summaries: Record<string, AgentSummary>; usage: Usage; now: number;
-}): Snapshot {
+type Input = { agents: Agent[]; work: Record<string, BackgroundWork>; summaries: Record<string, AgentSummary>; usage: Usage; now: number };
+
+export function buildSnapshot(input: Input): Snapshot {
+  let s = build(input, TIERS[0]);
+  for (const tier of TIERS.slice(1)) {
+    if (Buffer.byteLength(JSON.stringify(s)) < MAX_BYTES) break;
+    s = build(input, tier);
+  }
+  return s;
+}
+
+function build(input: Input, { last: LAST, subs: MAX_SUBS }: (typeof TIERS)[number]): Snapshot {
   const { agents, work, summaries, usage, now } = input;
   const sorted = agents
     .map((a, i) => ({ a, i, st: statusOf(a) }))
@@ -78,7 +89,7 @@ export function buildSnapshot(input: {
       acc.meters.map((m) => ({ engine: engineName(acc.engine) + (m.model ? ` · ${m.model}` : ''), win: windowOf(m.minutes), pct: Math.round(m.pct), reset: resetOf(m.resetsAt, now) }))),
     costs: [...agents]
       .sort((x, y) => y.cost - x.cost)
-      .slice(0, MAX_AGENTS)
+      .slice(0, MAX_COSTS)
       .map((a) => ({ name: cut(a.name, NAME), cost: euros(a.cost), share: max ? a.cost / max : 0 })),
     agents: views,
   };
