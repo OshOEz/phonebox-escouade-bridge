@@ -54,15 +54,44 @@ test('answerArgs names the agent, as answer_permission requires', () => {
   assert.deepEqual(answerArgs(req('r1'), 'deny'), { agent: 'ag1', project: 'p1', request: 'r1', decision: 'deny' });
 });
 
-test('emptyBodyLeavesItAndNeverResends', async () => {
+test('emptyBodyRetriesAfterAMinuteNotBefore', async () => {
   const f = fake();
-  const relay = new ApprovalRelay(f.deps);
+  let clock = 0;
+  const relay = new ApprovalRelay({ ...f.deps, now: () => clock });
   relay.sync([req('r1')]);
-  f.asks[0].resolve(null);
+  f.asks[0].resolve(null); // Phone away or its delay over.
   await tick();
+  clock = 59_000;
   relay.sync([req('r1')]);
   assert.equal(f.asks.length, 1);
   assert.deepEqual(f.answers, []);
+  clock = 60_000;
+  relay.sync([req('r1')]);
+  assert.equal(f.asks.length, 2);
+});
+
+test('retries after a phone that could not be reached', async () => {
+  const f = fake();
+  let clock = 0;
+  let fail = true;
+  const relay = new ApprovalRelay({ ...f.deps, now: () => clock, ask: (b, s) => (fail ? Promise.reject(new Error('ECONNREFUSED')) : f.deps.ask(b, s)) });
+  relay.sync([req('r1')]);
+  await tick();
+  await tick();
+  fail = false;
+  clock = 60_000;
+  relay.sync([req('r1')]);
+  assert.equal(f.asks.length, 1);
+});
+
+test('never resends while one is on the phone', () => {
+  const f = fake();
+  let clock = 0;
+  const relay = new ApprovalRelay({ ...f.deps, now: () => clock });
+  relay.sync([req('r1')]);
+  clock = 10 * 60_000;
+  relay.sync([req('r1')]);
+  assert.equal(f.asks.length, 1);
 });
 
 test('abortsVanished', async () => {

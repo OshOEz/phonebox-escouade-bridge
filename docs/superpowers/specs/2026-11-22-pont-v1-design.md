@@ -39,7 +39,8 @@ Escouade MCP (127.0.0.1:47xxx/mcp) ◄── sondage ── pont ── push ─
   change. Le widget n'a aucune logique métier : il affiche les champs déjà prêts et garde localement la ligne touchée.
 - **Approbation** : chaque permission nouvelle de `list_requests` (`type` `permission` ou `plan`) est envoyée au
   format du hook Claude Code à la route bloquante de PhoneBox ; la décision revient par `answer_permission`. Corps
-  vide (téléphone absent, délai, approbations coupées dans PhoneBox) : on ne fait rien, la demande reste dans Escouade.
+  vide (téléphone absent, délai, approbations coupées dans PhoneBox) ou PhoneBox injoignable : rien n'est répondu, la
+  demande reste dans Escouade et repart au téléphone 1 minute plus tard tant qu'elle attend (choix du 2026-11-22).
   Une demande qui disparaît de `list_requests` (répondue dans Escouade) annule l'appel en cours.
 
 ## Contraintes
