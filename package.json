@@ -1,0 +1,10 @@
+{
+  "name": "phonebox-escouade-bridge",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "test": "node --test",
+    "start": "node src/main.ts"
+  }
+}
