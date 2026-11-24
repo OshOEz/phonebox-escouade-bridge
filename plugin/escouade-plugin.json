@@ -1,0 +1,19 @@
+{
+  "$schema": "https://escouade.dev/schemas/plugin-1.json",
+  "id": "io.github.oshoez.phonebox-escouade",
+  "name": "PhoneBox",
+  "version": "0.1.0",
+  "description": {
+    "fr": "Tes agents et leurs autorisations sur le téléphone de PhoneBox : lance le pont avec Escouade et l'arrête en partant.",
+    "en": "Your agents and their permissions on PhoneBox's phone: starts the bridge with Escouade and stops it when you quit."
+  },
+  "author": { "name": "OshOEz" },
+  "license": "MIT",
+  "escouade": { "api": "1", "min": "2.2.0" },
+  "run": { "js": "dist/plugin.mjs" },
+  "activation": ["event:app.started"],
+  "permissions": {
+    "events": ["app.started"],
+    "commands": ["phonebox-escouade-bridge"]
+  }
+}

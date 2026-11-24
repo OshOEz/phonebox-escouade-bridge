@@ -6,7 +6,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "test": "node --test",
+    "test": "node --test test/*.test.ts",
     "start": "node src/main.ts",
     "build": "esbuild src/main.ts --bundle --platform=node --format=esm --target=node24 --outfile=dist/bridge.mjs --banner:js='#!/usr/bin/env node'"
   },

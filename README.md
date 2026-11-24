@@ -30,6 +30,22 @@ when the widget changes. Nothing to paste. If your phone shows only some pages, 
 Agents show up within 10 seconds. Tap an agent for its details, tap the line of numbers at the top for the quota and
 the cost per agent.
 
+## Escouade plugin
+
+The plugin in [plugin/](plugin) starts the bridge when Escouade starts, starts it again if it stops, and stops it when
+you quit Escouade. It also stops by itself if Escouade crashes.
+
+1. Install the bridge as a command (Setup, step 4): the plugin runs `phonebox-escouade-bridge`, nothing else.
+2. In Escouade: Plugins › En développement › Charger un dossier…, and pick the `plugin` folder of this repository.
+   The install window shows the one command it runs.
+
+Its state is in Plugins › PhoneBox › Journal: « En marche », what the bridge says (« Escouade ne répond pas »,
+« Page Escouade installée dans PhoneBox »…), and « Pont arrêté (code …), relance dans 5 s ». If the command is
+missing, the journal says what to type; then press Relancer there.
+
+To change the plugin: `cd plugin && npm install && npm test && npm run build`. `plugin/dist/plugin.mjs` is committed:
+Escouade does not copy what Git ignores.
+
 ## Settings
 
 | Variable | Default | What |
