@@ -86,8 +86,15 @@ async function snapshot() {
   await sendIfChanged(buildSnapshot({ agents, work, summaries, usage, now: Date.now() }));
 }
 
+// Escouade killed or crashed: the bridge it started is re-parented, so stop instead of running orphaned.
+const parent = process.ppid;
 let n = 0;
 async function tick() {
+  if (process.ppid !== parent) {
+    log("Escouade n'est plus là : arrêt du pont");
+    relay.sync([]);
+    process.exit(0);
+  }
   try {
     if (relayOn) relay.sync(list<PermissionRequest>(await call('list_requests')));
     if (n++ % SNAPSHOT_EVERY === 0) await snapshot();

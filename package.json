@@ -2,9 +2,22 @@
   "name": "phonebox-escouade-bridge",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "test": "node --test",
-    "start": "node src/main.ts"
+    "start": "node src/main.ts",
+    "build": "esbuild src/main.ts --bundle --platform=node --format=esm --target=node24 --outfile=dist/bridge.mjs --banner:js='#!/usr/bin/env node'"
+  },
+  "bin": {
+    "phonebox-escouade-bridge": "dist/bridge.mjs"
+  },
+  "files": [
+    "dist",
+    "widget"
+  ],
+  "devDependencies": {
+    "esbuild": "0.25.12"
   }
 }

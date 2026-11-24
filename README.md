@@ -11,18 +11,21 @@ A small process on your computer that talks to both local APIs. It changes nothi
 
 ## Setup
 
-1. **Node 24** or later. No `npm install`: there are no dependencies.
+1. **Node 24** or later. The bridge has no dependency at run time; `npm install` only fetches esbuild, which builds it.
 2. **Escouade**: Settings › Harness › MCP server, turn on « Les agents peuvent piloter Escouade ». The bridge reads the
    server's address and token from `mcpServers.escouade` in `~/.claude.json`.
 3. **PhoneBox**: turn on phone approvals for Claude Code (the bridge uses the same card).
-4. Run the bridge:
+4. Install the bridge as a command, in this folder:
 
    ```sh
-   npm start
+   npm install && npm run build && npm link
    ```
 
-5. On PhoneBox, add a **Custom HTML** widget on a page of its own, as large as the page, and paste the whole of
-   [widget/escouade.html](widget/escouade.html) into its HTML field.
+5. Install the Escouade plugin, which starts the bridge with Escouade and stops it when you quit: see
+   [Escouade plugin](#escouade-plugin). Without Escouade's plugin, `npm start` runs the bridge by hand.
+
+The bridge sets up PhoneBox by itself: a page « Escouade » holding the widget, created on its first start and updated
+when the widget changes. Nothing to paste. If your phone shows only some pages, the bridge adds this one to its list.
 
 Agents show up within 10 seconds. Tap an agent for its details, tap the line of numbers at the top for the quota and
 the cost per agent.
