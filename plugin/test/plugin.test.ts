@@ -20,7 +20,7 @@ async function started(opts: { missing?: boolean } = {}) {
     },
   });
   await fake.initialize();
-  await wait(5);
+  await wait(20);
   const lines = (level: string) => fake.logs.filter((l) => l.level === level).map((l) => l.message);
   return { fake, spawns, kills, lines };
 }
@@ -45,6 +45,16 @@ test('restarts after an exit', async () => {
   assert.ok(lines('warn').some((l) => l.includes('code 1')));
   await wait(20);
   assert.equal(spawns.length, 2);
+});
+
+test('backs off while the bridge keeps dying at start', async () => {
+  const { fake, lines } = await started();
+  await fake.notify('proc/exit', { proc: 1, code: 1 });
+  await wait(20);
+  await fake.notify('proc/exit', { proc: 2, code: 1 });
+  const warns = lines('warn');
+  assert.match(warns[0], /relance dans 0\.01 s/);
+  assert.match(warns[1], /relance dans 0\.02 s/);
 });
 
 test('says how to install when the command is missing', async () => {

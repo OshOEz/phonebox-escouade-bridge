@@ -390,11 +390,14 @@ function createPlugin(options) {
 
 // src/plugin.ts
 var COMMAND = "phonebox-escouade-bridge";
+var QUICK_MS = 1e4;
+var MAX_MS = 3e5;
 function bridgePlugin({ restartMs = 5e3 } = {}) {
   const plugin = createPlugin();
   let bridge;
   let restart;
   let stopping = false;
+  let delay = restartMs;
   const lines = (data) => data.split("\n").map((l) => l.trim()).filter(Boolean);
   async function launch() {
     restart = void 0;
@@ -407,13 +410,17 @@ function bridgePlugin({ restartMs = 5e3 } = {}) {
       return;
     }
     plugin.log.info("Pont lanc\xE9");
+    const since = Date.now();
     const code = await bridge.exited;
     bridge = void 0;
     if (stopping) return;
-    plugin.log.warn(`Pont arr\xEAt\xE9 (code ${code}), relance dans ${restartMs / 1e3} s`);
-    restart = setTimeout(launch, restartMs);
+    const quick = Date.now() - since < QUICK_MS;
+    if (!quick) delay = restartMs;
+    plugin.log.warn(`Pont arr\xEAt\xE9 (code ${code}), relance dans ${delay / 1e3} s`);
+    restart = setTimeout(launch, delay);
+    if (quick) delay = Math.min(delay * 2, MAX_MS);
   }
-  plugin.onInitialize(() => void setTimeout(launch, 0));
+  plugin.onInitialize(() => void setTimeout(launch, 10));
   plugin.onEvent("app.started", () => {
   });
   plugin.onShutdown(async () => {
