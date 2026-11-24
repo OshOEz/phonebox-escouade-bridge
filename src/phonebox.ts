@@ -13,7 +13,7 @@ export type PermissionRequest = {
   description: string | null;
 };
 
-const headers = (cfg: PhoneBoxConfig) => ({
+export const headers = (cfg: PhoneBoxConfig) => ({
   'content-type': 'application/json',
   ...(cfg.token ? { authorization: `Bearer ${cfg.token}` } : {}),
 });

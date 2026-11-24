@@ -1,10 +1,12 @@
 // The bridge: polls Escouade, pushes the agents to PhoneBox's widget, and relays permissions to PhoneBox's card.
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { loadConfig, callTool } from './escouade.ts';
 import { push, askPermission, type PhoneBoxConfig, type PermissionRequest } from './phonebox.ts';
 import { buildSnapshot, offlineSnapshot, type Agent, type BackgroundWork, type AgentSummary, type Usage, type Snapshot } from './snapshot.ts';
 import { ApprovalRelay, answerArgs } from './approvals.ts';
+import { installWidget, WIDGET_HTML } from './widget.ts';
 
 const REQUESTS_MS = 2000;
 const SNAPSHOT_EVERY = 3; // ticks: the agents every 6 s.
@@ -29,6 +31,15 @@ const relay = new ApprovalRelay({
   log,
 });
 
+// Never throws: PhoneBox away now is tried again when it answers (see sendIfChanged).
+async function ensureWidget() {
+  try {
+    if ((await installWidget(phonebox, await readFile(WIDGET_HTML, 'utf8'))) === 'installé') log('Page Escouade installée dans PhoneBox');
+  } catch (err) {
+    log(`PhoneBox : page Escouade non installée : ${(err as Error).message}`);
+  }
+}
+
 let lastSent = '';
 let lastSentAt = 0;
 let offline = false;
@@ -43,7 +54,10 @@ async function sendIfChanged(s: Snapshot) {
     await push(phonebox, 'escouade', s, TTL);
     lastSent = key;
     lastSentAt = Date.now();
-    if (pushFailing) log('PhoneBox reçoit de nouveau');
+    if (pushFailing) {
+      log('PhoneBox reçoit de nouveau');
+      void ensureWidget();
+    }
     pushFailing = false;
   } catch (err) {
     if (!pushFailing) log(`PhoneBox refuse l'envoi : ${(err as Error).message}`);
@@ -93,6 +107,7 @@ process.on('SIGINT', () => {
   relay.sync([]); // Takes every card off the phone.
   process.exit(0);
 });
+await ensureWidget();
 // One tick at a time: a slow Escouade never piles up calls.
 for (;;) {
   await tick();
